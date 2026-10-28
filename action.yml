@@ -1,0 +1,82 @@
+name: Setup Simulith
+description: >-
+  Start a local Simulith runtime for CI and export the AWS endpoint URL.
+branding:
+  icon: box
+  color: orange
+
+inputs:
+  mode:
+    description: "docker runs a container; binary downloads a GitHub Release asset and caches it."
+    required: false
+    default: docker
+  version:
+    description: "Image tag, or release tag for binary mode. latest resolves the newest GitHub Release when mode is binary."
+    required: false
+    default: latest
+  image:
+    description: Docker image name (docker mode). Use a local tag in CI to avoid a registry pull.
+    required: false
+    default: simulith/simulith
+  port:
+    description: Host port. Docker maps this port to container port 4566.
+    required: false
+    default: "4566"
+  region:
+    description: Value exported as AWS_DEFAULT_REGION and AWS_REGION.
+    required: false
+    default: us-east-1
+  container-name:
+    description: Docker container name (docker mode).
+    required: false
+    default: simulith
+  timeout-seconds:
+    description: Seconds to wait for GET /health.
+    required: false
+    default: "60"
+
+outputs:
+  endpoint-url:
+    description: Base URL for AWS CLI and SDKs (http://127.0.0.1:<port>).
+    value: ${{ steps.start.outputs.endpoint-url }}
+  container-name:
+    description: Docker container name when mode is docker.
+    value: ${{ steps.start.outputs.container-name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve Simulith version
+      id: plan
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        VERSION: ${{ inputs.version }}
+        IMAGE: ${{ inputs.image }}
+        PORT: ${{ inputs.port }}
+        REGION: ${{ inputs.region }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+        GH_TOKEN: ${{ github.token }}
+      run: bash "$GITHUB_ACTION_PATH/start.sh" plan
+
+    - name: Cache Simulith binary
+      if: inputs.mode == 'binary'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/simulith-bin
+        key: simulith-bin-${{ steps.plan.outputs.cache-key }}
+
+    - name: Start Simulith
+      id: start
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        VERSION: ${{ inputs.version }}
+        IMAGE: ${{ inputs.image }}
+        PORT: ${{ inputs.port }}
+        REGION: ${{ inputs.region }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+        GH_TOKEN: ${{ github.token }}
+      run: bash "$GITHUB_ACTION_PATH/start.sh" start
