@@ -3,7 +3,7 @@
 Start a local [Simulith](https://simulith.dev) runtime on a GitHub Actions runner and export the endpoint later steps use for the AWS CLI and SDKs.
 
 ```yaml
-- uses: simulith/setup-action@v0.309.0
+- uses: simulith/setup-action@v0.309.1
 - run: curl -fsS "$SIMULITH_ENDPOINT/health"
 ```
 
@@ -16,7 +16,7 @@ Product workflows in the Simulith repository call `./setup-action` from the same
 The action exports dummy credentials (`AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`), `AWS_DEFAULT_REGION`, `AWS_ENDPOINT_URL`, and `SIMULITH_ENDPOINT`.
 
 ```yaml
-- uses: simulith/setup-action@v0.309.0
+- uses: simulith/setup-action@v0.309.1
 - run: aws dynamodb list-tables --endpoint-url "$SIMULITH_ENDPOINT"
 ```
 
@@ -39,10 +39,10 @@ The action exports dummy credentials (`AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCE
 `mode: binary` downloads `simulith_<version>_<os>_<arch>` from [Releases in this repository](https://github.com/simulith/setup-action/releases), checks `checksums.txt`, and caches the extracted binary with `actions/cache`. `version: latest` resolves the newest release before the cache key is chosen.
 
 ```yaml
-- uses: simulith/setup-action@v0.309.0
+- uses: simulith/setup-action@v0.309.1
   with:
     mode: binary
-    version: v0.309.0
+    version: v0.309.1
 ```
 
 ## Outputs
