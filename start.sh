@@ -192,7 +192,7 @@ cmd_plan() {
   arch="$(goarch)"
   ver_num="$(strip_v "$tag")"
   asset="$(asset_name "$ver_num" "$os" "$arch")"
-  write_output cache-key "$asset"
+  write_output cache-key "${tag}-${asset}"
   write_output resolved-version "$tag"
   write_output asset "$asset"
 }
@@ -238,9 +238,21 @@ install_binary() {
   archive="${work}/${asset}"
   echo "Downloading ${url}" >&2
   if command -v gh >/dev/null 2>&1; then
-    gh release download "$tag" --repo "$RELEASE_REPO" \
-      --pattern "$asset" --pattern "checksums.txt" \
-      --dir "$work" --clobber
+    local attempt=1 max_dl=10
+    while [ "$attempt" -le "$max_dl" ]; do
+      if gh release download "$tag" --repo "$RELEASE_REPO" \
+        --pattern "$asset" --pattern "checksums.txt" \
+        --dir "$work" --clobber; then
+        break
+      fi
+      if [ "$attempt" -ge "$max_dl" ]; then
+        echo "::error::gh release download failed for ${tag} (${asset}) after ${max_dl} attempts" >&2
+        return 1
+      fi
+      echo "gh release download retry ${attempt}/${max_dl} for ${tag} (publish may still be uploading assets)…" >&2
+      sleep 15
+      attempt=$((attempt + 1))
+    done
   else
     local curl_auth=()
     local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
